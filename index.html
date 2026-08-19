@@ -1,34 +1,317 @@
-<DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>우리 반 공동구매</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont,
+                "Apple SD Gothic Neo", sans-serif;
+            background: #f7f8fc;
+            color: #202124;
+        }
+
+        .header {
+            background: white;
+            padding: 24px 20px 18px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 25px;
+        }
+
+        .header p {
+            margin: 7px 0 0;
+            color: #777;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 24px 18px 50px;
+        }
+
+        .welcome {
+            background: #202124;
+            color: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 28px;
+        }
+
+        .welcome p {
+            margin: 0 0 8px;
+            font-size: 14px;
+            opacity: .75;
+        }
+
+        .welcome h2 {
+            margin: 0;
+            font-size: 23px;
+            line-height: 1.4;
+        }
+
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 14px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 14px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.05);
+        }
+
+        .emoji {
+            font-size: 30px;
+        }
+
+        .status {
+            float: right;
+            background: #eef7ee;
+            color: #3d8b40;
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .card h3 {
+            margin: 13px 0 6px;
+            font-size: 17px;
+        }
+
+        .card p {
+            margin: 4px 0;
+            color: #777;
+            font-size: 13px;
+        }
+
+        .button {
+            width: 100%;
+            border: none;
+            background: #202124;
+            color: white;
+            padding: 13px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 12px;
+        }
+
+        .form {
+            display: none;
+            background: white;
+            border-radius: 18px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .form input {
+            width: 100%;
+            padding: 13px;
+            margin: 7px 0 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .form label {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .message {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 13px;
+        }
+    </style>
 </head>
 
 <body>
 
+<header class="header">
     <h1>📦 우리 반 공동구매</h1>
-
     <p>필요한 물건을 함께 구매해요!</p>
+</header>
 
-    <h2>🛒 진행 중인 공동구매</h2>
+<main class="container">
 
-    <div>
-        <h3>🔌 C타입 충전기</h3>
-        <p>현재 신청 인원: 0명</p>
-        <button>신청하기</button>
+    <section class="welcome">
+        <p>WELCOME 👋</p>
+        <h2>우리 반에서 필요한 물건,<br>함께 구매해요.</h2>
+    </section>
+
+    <h2 class="section-title">🛒 진행 중인 공동구매</h2>
+
+    <div class="card">
+        <span class="emoji">🔌</span>
+        <span class="status">모집중</span>
+
+        <h3>C타입 충전기</h3>
+        <p>현재 신청 인원: <span id="chargerCount">0</span>명</p>
+
+        <button class="button"
+                onclick="openForm('C타입 충전기')">
+            신청하기 →
+        </button>
     </div>
 
-    <div>
-        <h3>🖊️ 형광펜 세트</h3>
-        <p>현재 신청 인원: 0명</p>
-        <button>신청하기</button>
+    <div class="card">
+        <span class="emoji">🖊️</span>
+        <span class="status">모집중</span>
+
+        <h3>형광펜 세트</h3>
+        <p>현재 신청 인원: <span id="penCount">0</span>명</p>
+
+        <button class="button"
+                onclick="openForm('형광펜 세트')">
+            신청하기 →
+        </button>
     </div>
 
-    <h2>💡 원하는 상품 제안하기</h2>
+    <div class="form" id="applicationForm">
 
-    <button>상품 제안하기</button>
+        <h3 id="selectedProduct">공동구매 신청</h3>
+
+        <label>이름</label>
+        <input id="name" type="text" placeholder="이름을 입력해주세요">
+
+        <label>수량</label>
+        <input id="quantity" type="number" min="1" value="1">
+
+        <button class="button" onclick="submitApplication()">
+            공동구매 신청
+        </button>
+
+        <div class="message" id="message"></div>
+
+    </div>
+
+</main>
+
+<script type="module">
+
+    /*
+     * 🔥 여기에 Firebase에서 복사한
+     * firebaseConfig 내용을 넣어주세요.
+     *
+     * apiKey 등의 값을 이 채팅에 보내지는 마세요.
+     */
+
+    import { initializeApp }
+        from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+
+    import {
+        getFirestore,
+        collection,
+        addDoc,
+        serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+
+    const firebaseConfig = {
+        // Firebase 콘솔에서 받은 값을 넣으세요.
+        apiKey: "AIzaSyDCyA-OWIIWP8rp0N2rP7bVlVZepjq1jBk",
+        authDomain: "classmarket-d9c78.firebaseapp.com",
+        projectId: "classmarket-d9c78",
+        storageBucket: "classmarket-d9c78.firebasestorage.app",
+        messagingSenderId: "448581710198",
+        appId: "G-B89J11PS8J"
+    };
+
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+
+    let selectedProduct = "";
+
+
+    window.openForm = function(product) {
+
+        selectedProduct = product;
+
+        document.getElementById("selectedProduct")
+            .textContent = product + " 신청";
+
+        document.getElementById("applicationForm")
+            .style.display = "block";
+
+        document.getElementById("applicationForm")
+            .scrollIntoView({
+                behavior: "smooth"
+            });
+    };
+
+
+    window.submitApplication = async function() {
+
+        const name =
+            document.getElementById("name").value.trim();
+
+        const quantity =
+            Number(document.getElementById("quantity").value);
+
+        const message =
+            document.getElementById("message");
+
+
+        if (!name) {
+            message.textContent =
+                "이름을 입력해주세요.";
+            return;
+        }
+
+        if (!quantity || quantity < 1) {
+            message.textContent =
+                "수량을 확인해주세요.";
+            return;
+        }
+
+
+        try {
+
+            await addDoc(
+                collection(db, "applications"),
+                {
+                    product: selectedProduct,
+                    name: name,
+                    quantity: quantity,
+                    createdAt: serverTimestamp()
+                }
+            );
+
+
+            message.textContent =
+                "✅ 신청이 완료되었습니다!";
+
+            document.getElementById("name").value = "";
+            document.getElementById("quantity").value = 1;
+
+        } catch (error) {
+
+            console.error(error);
+
+            message.textContent =
+                "신청에 실패했습니다. 잠시 후 다시 시도해주세요.";
+        }
+    };
+
+</script>
 
 </body>
 </html>
