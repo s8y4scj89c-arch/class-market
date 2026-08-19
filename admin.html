@@ -152,7 +152,9 @@
       <button id="logoutButton">
         로그아웃
       </button>
-
+<button id="closeButton" style="margin-top:10px;">
+  🚫 공동구매 마감
+</button>
     </div>
 
 
@@ -240,14 +242,15 @@
 
 
   import {
-    getFirestore,
-    collection,
-    getDocs,
-    query,
-    orderBy
-  } from
-    "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
-
+  getFirestore,
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  doc,
+  setDoc
+} from
+"https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
   // 🔥 Firebase 설정
   // index.html에서 사용한 것과 똑같은 값을 넣으세요.
