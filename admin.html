@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>공동구매 관리자</title>
 
   <style>
@@ -29,6 +30,10 @@
     }
 
     h1 {
+      margin-top: 0;
+    }
+
+    h2 {
       margin-top: 0;
     }
 
@@ -59,6 +64,30 @@
       margin-top: 10px;
     }
 
+    .summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .summary-card {
+      background: #f7f8fc;
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .summary-card .number {
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .small {
+      color: #777;
+      font-size: 13px;
+    }
+
     .item {
       border-top: 1px solid #eee;
       padding: 14px 0;
@@ -68,9 +97,9 @@
       border-top: 0;
     }
 
-    .small {
-      color: #777;
-      font-size: 13px;
+    .product-name {
+      font-weight: bold;
+      margin-bottom: 5px;
     }
 
     #adminArea {
@@ -83,37 +112,109 @@
 
 <div class="container">
 
+  <!-- 로그인 -->
+
   <div id="loginArea" class="box">
+
     <h1>🔐 관리자 로그인</h1>
 
-    <input id="email"
-           type="email"
-           placeholder="관리자 이메일">
+    <input
+      id="email"
+      type="email"
+      placeholder="관리자 이메일"
+    >
 
-    <input id="password"
-           type="password"
-           placeholder="비밀번호">
+    <input
+      id="password"
+      type="password"
+      placeholder="비밀번호"
+    >
 
-    <button id="loginButton">로그인</button>
+    <button id="loginButton">
+      로그인
+    </button>
 
     <div id="error" class="error"></div>
+
   </div>
 
+
+  <!-- 관리자 화면 -->
 
   <div id="adminArea">
 
     <div class="box">
+
       <h1>📦 공동구매 관리</h1>
+
       <p class="small" id="userEmail"></p>
 
-      <button id="logoutButton">로그아웃</button>
+      <button id="logoutButton">
+        로그아웃
+      </button>
+
     </div>
 
+
+    <!-- 통계 -->
+
     <div class="box">
+
+      <h2>📊 공동구매 현황</h2>
+
+      <div class="summary">
+
+        <div class="summary-card">
+
+          <div class="small">
+            총 신청자
+          </div>
+
+          <div
+            class="number"
+            id="totalPeople"
+          >
+            0
+          </div>
+
+        </div>
+
+
+        <div class="summary-card">
+
+          <div class="small">
+            총 신청 수량
+          </div>
+
+          <div
+            class="number"
+            id="totalQuantity"
+          >
+            0
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div id="productSummary">
+        불러오는 중...
+      </div>
+
+    </div>
+
+
+    <!-- 신청 목록 -->
+
+    <div class="box">
+
       <h2>📋 신청 목록</h2>
+
       <div id="applications">
         불러오는 중...
       </div>
+
     </div>
 
   </div>
@@ -123,15 +224,20 @@
 
 <script type="module">
 
-  import { initializeApp }
-    from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+  import {
+    initializeApp
+  } from
+    "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+
 
   import {
     getAuth,
     signInWithEmailAndPassword,
     onAuthStateChanged,
     signOut
-  } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+  } from
+    "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+
 
   import {
     getFirestore,
@@ -139,11 +245,15 @@
     getDocs,
     query,
     orderBy
-  } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+  } from
+    "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 
-  // Firebase 콘솔에서 사용했던 설정값을 넣어주세요.
+  // 🔥 Firebase 설정
+  // index.html에서 사용한 것과 똑같은 값을 넣으세요.
+
   const firebaseConfig = {
+
     apiKey: "AIzaSyDCyA-OWIIWP8rp0N2rP7bVlVZepjq1jBk",
     authDomain: "classmarket-d9c78.firebaseapp.com",
     projectId: "classmarket-d9c78",
@@ -153,35 +263,59 @@
   };
 
 
-  const app = initializeApp(firebaseConfig);
+  const app =
+    initializeApp(firebaseConfig);
 
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+
+  const auth =
+    getAuth(app);
+
+
+  const db =
+    getFirestore(app);
 
 
   const loginArea =
     document.getElementById("loginArea");
 
+
   const adminArea =
     document.getElementById("adminArea");
 
+
   const error =
     document.getElementById("error");
+
 
   const applications =
     document.getElementById("applications");
 
 
-  document.getElementById("loginButton")
+  const productSummary =
+    document.getElementById("productSummary");
+
+
+  // 로그인
+
+  document
+    .getElementById("loginButton")
     .addEventListener("click", async () => {
 
       const email =
-        document.getElementById("email").value.trim();
+        document
+          .getElementById("email")
+          .value
+          .trim();
+
 
       const password =
-        document.getElementById("password").value;
+        document
+          .getElementById("password")
+          .value;
+
 
       error.textContent = "";
+
 
       try {
 
@@ -201,7 +335,10 @@
     });
 
 
-  document.getElementById("logoutButton")
+  // 로그아웃
+
+  document
+    .getElementById("logoutButton")
     .addEventListener("click", async () => {
 
       await signOut(auth);
@@ -209,41 +346,62 @@
     });
 
 
-  onAuthStateChanged(auth, async (user) => {
+  // 로그인 상태 확인
 
-    if (!user) {
+  onAuthStateChanged(
+    auth,
+    async (user) => {
 
-      loginArea.style.display = "block";
-      adminArea.style.display = "none";
+      if (!user) {
 
-      return;
+        loginArea.style.display =
+          "block";
+
+        adminArea.style.display =
+          "none";
+
+        return;
+
+      }
+
+
+      loginArea.style.display =
+        "none";
+
+      adminArea.style.display =
+        "block";
+
+
+      document
+        .getElementById("userEmail")
+        .textContent =
+          user.email;
+
+
+      await loadApplications();
+
     }
+  );
 
 
-    loginArea.style.display = "none";
-    adminArea.style.display = "block";
-
-    document.getElementById("userEmail")
-      .textContent = user.email;
-
-
-    await loadApplications();
-
-  });
-
+  // 신청 데이터 불러오기
 
   async function loadApplications() {
 
-    applications.textContent =
-      "신청 목록을 불러오는 중...";
-
-
     try {
 
-      const q = query(
-        collection(db, "applications"),
-        orderBy("createdAt", "desc")
-      );
+      const q =
+        query(
+          collection(
+            db,
+            "applications"
+          ),
+          orderBy(
+            "createdAt",
+            "desc"
+          )
+        );
+
 
       const snapshot =
         await getDocs(q);
@@ -254,32 +412,165 @@
         applications.textContent =
           "아직 신청자가 없어요.";
 
+        productSummary.textContent =
+          "아직 신청자가 없어요.";
+
         return;
+
       }
 
 
       applications.innerHTML = "";
 
-      snapshot.forEach((doc) => {
 
-        const data = doc.data();
+      const productData = {};
 
-        const item =
-          document.createElement("div");
+      let totalPeople = 0;
 
-        item.className = "item";
+      let totalQuantity = 0;
 
-        item.innerHTML = `
-          <strong>${escapeHtml(data.product)}</strong>
-          <br>
-          신청자: ${escapeHtml(data.name)}
-          <br>
-          수량: ${data.quantity}개
-        `;
 
-        applications.appendChild(item);
+      snapshot.forEach(
+        (doc) => {
 
-      });
+          const data =
+            doc.data();
+
+
+          const product =
+            data.product || "상품 없음";
+
+
+          const name =
+            data.name || "이름 없음";
+
+
+          const quantity =
+            Number(data.quantity) || 0;
+
+
+          totalPeople += 1;
+
+          totalQuantity += quantity;
+
+
+          if (!productData[product]) {
+
+            productData[product] = {
+
+              people: 0,
+
+              quantity: 0
+
+            };
+
+          }
+
+
+          productData[product].people += 1;
+
+          productData[product].quantity += quantity;
+
+
+          const item =
+            document.createElement(
+              "div"
+            );
+
+
+          item.className =
+            "item";
+
+
+          item.innerHTML = `
+
+            <div class="product-name">
+              ${escapeHtml(product)}
+            </div>
+
+            <div>
+              신청자:
+              ${escapeHtml(name)}
+            </div>
+
+            <div>
+              수량:
+              ${quantity}개
+            </div>
+
+          `;
+
+
+          applications.appendChild(
+            item
+          );
+
+        }
+      );
+
+
+      // 전체 통계
+
+      document
+        .getElementById(
+          "totalPeople"
+        )
+        .textContent =
+          totalPeople;
+
+
+      document
+        .getElementById(
+          "totalQuantity"
+        )
+        .textContent =
+          totalQuantity;
+
+
+      // 상품별 통계
+
+      productSummary.innerHTML = "";
+
+
+      Object.entries(
+        productData
+      ).forEach(
+        ([product, data]) => {
+
+          const div =
+            document.createElement(
+              "div"
+            );
+
+
+          div.className =
+            "summary-card";
+
+
+          div.style.marginTop =
+            "10px";
+
+
+          div.innerHTML = `
+
+            <strong>
+              ${escapeHtml(product)}
+            </strong>
+
+            <div class="small">
+              ${data.people}명 신청 ·
+              총 ${data.quantity}개
+            </div>
+
+          `;
+
+
+          productSummary.appendChild(
+            div
+          );
+
+        }
+      );
 
     } catch (e) {
 
@@ -288,22 +579,51 @@
       applications.textContent =
         "신청 목록을 불러오지 못했어요.";
 
+      productSummary.textContent =
+        "통계를 불러오지 못했어요.";
+
     }
 
   }
 
 
+  // HTML 안전 처리
+
   function escapeHtml(value) {
 
     return String(value)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+
+      .replaceAll(
+        "&",
+        "&amp;"
+      )
+
+      .replaceAll(
+        "<",
+        "&lt;"
+      )
+
+      .replaceAll(
+        ">",
+        "&gt;"
+      )
+
+      .replaceAll(
+        '"',
+        "&quot;"
+      )
+
+      .replaceAll(
+        "'",
+        "&#039;"
+      );
 
   }
 
+</script>
+
+</body>
+</html>
 </script>
 
 </body>
