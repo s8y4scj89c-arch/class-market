@@ -244,11 +244,10 @@
   import {
   getFirestore,
   collection,
-  getDocs,
-  query,
-  orderBy,
+  addDoc,
+  serverTimestamp,
   doc,
-  setDoc
+  getDoc
 } from
 "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
@@ -278,6 +277,30 @@
     getFirestore(app);
 
 
+async function checkClosed() {
+
+  const statusDoc =
+    await getDoc(
+      doc(db, "settings", "status")
+    );
+
+  if (
+    statusDoc.exists() &&
+    statusDoc.data().closed === true
+  ) {
+
+    isClosed = true;
+
+    document
+      .querySelectorAll(".status")
+      .forEach(el => {
+        el.textContent = "마감";
+      });
+
+    document
+      .querySelectorAll(".button")
+      .forEach(btn => {
+        btn.disabled = true;
   const loginArea =
     document.getElementById("loginArea");
 
