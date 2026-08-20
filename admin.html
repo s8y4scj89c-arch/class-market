@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>공동구매 관리자</title>
 
   <style>
@@ -29,11 +28,7 @@
       box-shadow: 0 3px 12px rgba(0,0,0,.05);
     }
 
-    h1 {
-      margin-top: 0;
-    }
-
-    h2 {
+    h1, h2 {
       margin-top: 0;
     }
 
@@ -58,9 +53,14 @@
       cursor: pointer;
     }
 
-    .close-button {
-      margin-top: 10px;
+    .delete {
       background: #d93025;
+      margin-top: 10px;
+    }
+
+    .close {
+      background: #d93025;
+      margin-top: 10px;
     }
 
     .error {
@@ -109,6 +109,13 @@
 
     #adminArea {
       display: none;
+    }
+
+    .product-box {
+      background: #f7f8fc;
+      border-radius: 14px;
+      padding: 15px;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -160,10 +167,54 @@
 
       <button
         id="closeButton"
-        class="close-button"
+        class="close"
       >
         🚫 공동구매 마감
       </button>
+
+    </div>
+
+
+    <!-- 상품 추가 -->
+
+    <div class="box">
+
+      <h2>➕ 상품 추가</h2>
+
+      <input
+        id="productName"
+        type="text"
+        placeholder="상품 이름"
+      >
+
+      <input
+        id="productEmoji"
+        type="text"
+        placeholder="상품 이모지 (예: 🔌)"
+      >
+
+      <button id="addProductButton">
+        상품 추가하기
+      </button>
+
+      <div
+        id="productMessage"
+        class="small"
+        style="margin-top:10px;"
+      ></div>
+
+    </div>
+
+
+    <!-- 상품 목록 -->
+
+    <div class="box">
+
+      <h2>🛒 상품 관리</h2>
+
+      <div id="productList">
+        불러오는 중...
+      </div>
 
     </div>
 
@@ -191,7 +242,6 @@
 
         </div>
 
-
         <div class="summary-card">
 
           <div class="small">
@@ -208,7 +258,6 @@
         </div>
 
       </div>
-
 
       <div id="productSummary">
         불러오는 중...
@@ -238,7 +287,8 @@
 
   import {
     initializeApp
-  } from
+  }
+  from
     "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 
 
@@ -247,37 +297,49 @@
     signInWithEmailAndPassword,
     onAuthStateChanged,
     signOut
-  } from
+  }
+  from
     "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
 
   import {
     getFirestore,
     collection,
+    addDoc,
     getDocs,
     query,
     orderBy,
     doc,
-    setDoc
-  } from
+    setDoc,
+    deleteDoc,
+    serverTimestamp
+  }
+  from
     "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 
-  // Firebase 설정
-
   const firebaseConfig = {
 
-    apiKey: "AIzaSyDCyA-OWIIWP8rp0N2rP7bVlVZepjq1jBk",
-    authDomain: "classmarket-d9c78.firebaseapp.com",
-    projectId: "classmarket-d9c78",
-    storageBucket: "classmarket-d9c78.firebasestorage.app",
-    messagingSenderId: "448581710198",
-    appId: "G-B89J11PS8J"
+    apiKey:
+      "AIzaSyDCyA-OWIIWP8rp0N2rP7bVlVZepjq1jBk",
+
+    authDomain:
+      "classmarket-d9c78.firebaseapp.com",
+
+    projectId:
+      "classmarket-d9c78",
+
+    storageBucket:
+      "classmarket-d9c78.firebasestorage.app",
+
+    messagingSenderId:
+      "448581710198",
+
+    appId:
+      "G-B89J11PS8J"
 
   };
 
-
-  // Firebase 시작
 
   const app =
     initializeApp(firebaseConfig);
@@ -291,127 +353,333 @@
     getFirestore(app);
 
 
-  // 화면 요소
-
   const loginArea =
     document.getElementById("loginArea");
-
 
   const adminArea =
     document.getElementById("adminArea");
 
-
   const error =
     document.getElementById("error");
-
 
   const applications =
     document.getElementById("applications");
 
-
   const productSummary =
     document.getElementById("productSummary");
+
+  const productList =
+    document.getElementById("productList");
+
+  const productMessage =
+    document.getElementById("productMessage");
 
 
   // 로그인
 
   document
     .getElementById("loginButton")
-    .addEventListener("click", async () => {
+    .addEventListener(
+      "click",
+      async () => {
 
-      const email =
-        document
-          .getElementById("email")
-          .value
-          .trim();
+        const email =
+          document
+            .getElementById("email")
+            .value
+            .trim();
 
+        const password =
+          document
+            .getElementById("password")
+            .value;
 
-      const password =
-        document
-          .getElementById("password")
-          .value;
+        error.textContent = "";
 
+        try {
 
-      error.textContent = "";
+          await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
 
+        } catch (e) {
 
-      try {
+          console.error(e);
 
-        await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+          error.textContent =
+            "로그인에 실패했어요.";
 
-      } catch (e) {
-
-        console.error(e);
-
-        error.textContent =
-          "로그인에 실패했어요. 이메일과 비밀번호를 확인해주세요.";
+        }
 
       }
-
-    });
+    );
 
 
   // 로그아웃
 
   document
     .getElementById("logoutButton")
-    .addEventListener("click", async () => {
+    .addEventListener(
+      "click",
+      async () => {
 
-      await signOut(auth);
+        await signOut(auth);
 
-    });
+      }
+    );
 
 
-  // 공동구매 마감
+  // 상품 추가
 
   document
-    .getElementById("closeButton")
-    .addEventListener("click", async () => {
+    .getElementById("addProductButton")
+    .addEventListener(
+      "click",
+      async () => {
 
-      const confirmed =
-        confirm(
-          "공동구매를 마감할까요?\n마감 후에는 학생들이 신청할 수 없게 됩니다."
+        const name =
+          document
+            .getElementById("productName")
+            .value
+            .trim();
+
+        const emoji =
+          document
+            .getElementById("productEmoji")
+            .value
+            .trim() || "📦";
+
+
+        if (!name) {
+
+          productMessage.textContent =
+            "상품 이름을 입력해주세요.";
+
+          return;
+
+        }
+
+
+        try {
+
+          await addDoc(
+            collection(db, "products"),
+            {
+              name: name,
+              emoji: emoji,
+              createdAt:
+                serverTimestamp()
+            }
+          );
+
+
+          productMessage.textContent =
+            "✅ 상품이 추가되었습니다.";
+
+
+          document
+            .getElementById("productName")
+            .value = "";
+
+          document
+            .getElementById("productEmoji")
+            .value = "";
+
+
+          loadProducts();
+
+
+        } catch (e) {
+
+          console.error(e);
+
+          productMessage.textContent =
+            "상품 추가에 실패했습니다.";
+
+        }
+
+      }
+    );
+
+
+  // 상품 목록
+
+  async function loadProducts() {
+
+    try {
+
+      const snapshot =
+        await getDocs(
+          collection(db, "products")
         );
 
 
-      if (!confirmed) {
+      productList.innerHTML = "";
+
+
+      if (snapshot.empty) {
+
+        productList.textContent =
+          "등록된 상품이 없습니다.";
+
         return;
+
       }
 
 
-      try {
+      snapshot.forEach(
+        (productDoc) => {
 
-        await setDoc(
-          doc(db, "settings", "status"),
-          {
-            closed: true
+          const data =
+            productDoc.data();
+
+
+          const div =
+            document.createElement("div");
+
+
+          div.className =
+            "product-box";
+
+
+          div.innerHTML = `
+
+            <strong>
+              ${escapeHtml(data.emoji || "📦")}
+              ${escapeHtml(data.name)}
+            </strong>
+
+            <button
+              class="delete"
+              data-id="${productDoc.id}"
+            >
+              🗑️ 상품 삭제
+            </button>
+
+          `;
+
+
+          productList.appendChild(div);
+
+        }
+      );
+
+
+      document
+        .querySelectorAll(".delete")
+        .forEach(
+          (button) => {
+
+            button.addEventListener(
+              "click",
+              async () => {
+
+                const confirmed =
+                  confirm(
+                    "이 상품을 삭제할까요?"
+                  );
+
+
+                if (!confirmed) {
+                  return;
+                }
+
+
+                try {
+
+                  await deleteDoc(
+                    doc(
+                      db,
+                      "products",
+                      button.dataset.id
+                    )
+                  );
+
+
+                  loadProducts();
+
+
+                } catch (e) {
+
+                  console.error(e);
+
+                  alert(
+                    "상품 삭제에 실패했습니다."
+                  );
+
+                }
+
+              }
+            );
+
           }
         );
 
+    } catch (e) {
 
-        alert(
-          "공동구매가 마감되었습니다."
-        );
+      console.error(e);
+
+      productList.textContent =
+        "상품 목록을 불러오지 못했습니다.";
+
+    }
+
+  }
 
 
-      } catch (e) {
+  // 마감
 
-        console.error(e);
+  document
+    .getElementById("closeButton")
+    .addEventListener(
+      "click",
+      async () => {
 
-        alert(
-          "마감 처리에 실패했습니다."
-        );
+        if (
+          !confirm(
+            "공동구매를 마감할까요?"
+          )
+        ) {
+          return;
+        }
+
+
+        try {
+
+          await setDoc(
+            doc(
+              db,
+              "settings",
+              "status"
+            ),
+            {
+              closed: true
+            }
+          );
+
+
+          alert(
+            "공동구매가 마감되었습니다."
+          );
+
+
+        } catch (e) {
+
+          console.error(e);
+
+          alert(
+            "마감 처리에 실패했습니다."
+          );
+
+        }
 
       }
+    );
 
-    });
 
-
-  // 로그인 상태 확인
+  // 로그인 상태
 
   onAuthStateChanged(
     auth,
@@ -443,13 +711,15 @@
           user.email;
 
 
-      await loadApplications();
+      loadProducts();
+
+      loadApplications();
 
     }
   );
 
 
-  // 신청 데이터 불러오기
+  // 신청 목록
 
   async function loadApplications() {
 
@@ -472,6 +742,16 @@
         await getDocs(q);
 
 
+      applications.innerHTML = "";
+
+
+      const productData = {};
+
+      let totalPeople = 0;
+
+      let totalQuantity = 0;
+
+
       if (snapshot.empty) {
 
         applications.textContent =
@@ -485,17 +765,6 @@
       }
 
 
-      applications.innerHTML = "";
-
-
-      const productData = {};
-
-
-      let totalPeople = 0;
-
-      let totalQuantity = 0;
-
-
       snapshot.forEach(
         (docSnapshot) => {
 
@@ -506,16 +775,14 @@
           const product =
             data.product || "상품 없음";
 
-
           const name =
             data.name || "이름 없음";
-
 
           const quantity =
             Number(data.quantity) || 0;
 
 
-          totalPeople += 1;
+          totalPeople++;
 
           totalQuantity += quantity;
 
@@ -523,25 +790,21 @@
           if (!productData[product]) {
 
             productData[product] = {
-
               people: 0,
-
               quantity: 0
-
             };
 
           }
 
 
-          productData[product].people += 1;
+          productData[product].people++;
 
-          productData[product].quantity += quantity;
+          productData[product].quantity +=
+            quantity;
 
 
           const item =
-            document.createElement(
-              "div"
-            );
+            document.createElement("div");
 
 
           item.className =
@@ -567,123 +830,83 @@
           `;
 
 
-          applications.appendChild(
-            item
-          );
+          applications.appendChild(item);
 
         }
       );
 
 
-      // 전체 통계
-
       document
-        .getElementById(
-          "totalPeople"
-        )
+        .getElementById("totalPeople")
         .textContent =
           totalPeople;
 
 
       document
-        .getElementById(
-          "totalQuantity"
-        )
+        .getElementById("totalQuantity")
         .textContent =
           totalQuantity;
 
 
-      // 상품별 통계
-
       productSummary.innerHTML = "";
 
 
-      Object.entries(
-        productData
-      ).forEach(
-        ([product, data]) => {
+      Object.entries(productData)
+        .forEach(
+          ([product, data]) => {
 
-          const div =
-            document.createElement(
-              "div"
-            );
+            const div =
+              document.createElement("div");
 
 
-          div.className =
-            "summary-card";
+            div.className =
+              "summary-card";
 
 
-          div.style.marginTop =
-            "10px";
+            div.style.marginTop =
+              "10px";
 
 
-          div.innerHTML = `
+            div.innerHTML = `
 
-            <strong>
-              ${escapeHtml(product)}
-            </strong>
+              <strong>
+                ${escapeHtml(product)}
+              </strong>
 
-            <div class="small">
-              ${data.people}명 신청 ·
-              총 ${data.quantity}개
-            </div>
+              <div class="small">
+                ${data.people}명 신청 ·
+                총 ${data.quantity}개
+              </div>
 
-          `;
+            `;
 
 
-          productSummary.appendChild(
-            div
-          );
+            productSummary.appendChild(div);
 
-        }
-      );
-
+          }
+        );
 
     } catch (e) {
 
       console.error(e);
 
       applications.textContent =
-        "신청 목록을 불러오지 못했어요.";
-
-      productSummary.textContent =
-        "통계를 불러오지 못했어요.";
+        "신청 목록을 불러오지 못했습니다.";
 
     }
 
   }
 
 
-  // HTML 안전 처리
-
   function escapeHtml(value) {
 
     return String(value)
 
-      .replaceAll(
-        "&",
-        "&amp;"
-      )
-
-      .replaceAll(
-        "<",
-        "&lt;"
-      )
-
-      .replaceAll(
-        ">",
-        "&gt;"
-      )
-
-      .replaceAll(
-        '"',
-        "&quot;"
-      )
-
-      .replaceAll(
-        "'",
-        "&#039;"
-      );
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
 
   }
 
