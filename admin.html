@@ -58,6 +58,11 @@
       cursor: pointer;
     }
 
+    .close-button {
+      margin-top: 10px;
+      background: #d93025;
+    }
+
     .error {
       color: #d93025;
       font-size: 13px;
@@ -152,9 +157,14 @@
       <button id="logoutButton">
         로그아웃
       </button>
-<button id="closeButton" style="margin-top:10px;">
-  🚫 공동구매 마감
-</button>
+
+      <button
+        id="closeButton"
+        class="close-button"
+      >
+        🚫 공동구매 마감
+      </button>
+
     </div>
 
 
@@ -242,17 +252,18 @@
 
 
   import {
-  getFirestore,
-  collection,
-  addDoc,
-  serverTimestamp,
-  doc,
-  getDoc
-} from
-"https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    orderBy,
+    doc,
+    setDoc
+  } from
+    "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-  // 🔥 Firebase 설정
-  // index.html에서 사용한 것과 똑같은 값을 넣으세요.
+
+  // Firebase 설정
 
   const firebaseConfig = {
 
@@ -262,8 +273,11 @@
     storageBucket: "classmarket-d9c78.firebasestorage.app",
     messagingSenderId: "448581710198",
     appId: "G-B89J11PS8J"
+
   };
 
+
+  // Firebase 시작
 
   const app =
     initializeApp(firebaseConfig);
@@ -277,30 +291,8 @@
     getFirestore(app);
 
 
-async function checkClosed() {
+  // 화면 요소
 
-  const statusDoc =
-    await getDoc(
-      doc(db, "settings", "status")
-    );
-
-  if (
-    statusDoc.exists() &&
-    statusDoc.data().closed === true
-  ) {
-
-    isClosed = true;
-
-    document
-      .querySelectorAll(".status")
-      .forEach(el => {
-        el.textContent = "마감";
-      });
-
-    document
-      .querySelectorAll(".button")
-      .forEach(btn => {
-        btn.disabled = true;
   const loginArea =
     document.getElementById("loginArea");
 
@@ -353,6 +345,8 @@ async function checkClosed() {
 
       } catch (e) {
 
+        console.error(e);
+
         error.textContent =
           "로그인에 실패했어요. 이메일과 비밀번호를 확인해주세요.";
 
@@ -368,6 +362,51 @@ async function checkClosed() {
     .addEventListener("click", async () => {
 
       await signOut(auth);
+
+    });
+
+
+  // 공동구매 마감
+
+  document
+    .getElementById("closeButton")
+    .addEventListener("click", async () => {
+
+      const confirmed =
+        confirm(
+          "공동구매를 마감할까요?\n마감 후에는 학생들이 신청할 수 없게 됩니다."
+        );
+
+
+      if (!confirmed) {
+        return;
+      }
+
+
+      try {
+
+        await setDoc(
+          doc(db, "settings", "status"),
+          {
+            closed: true
+          }
+        );
+
+
+        alert(
+          "공동구매가 마감되었습니다."
+        );
+
+
+      } catch (e) {
+
+        console.error(e);
+
+        alert(
+          "마감 처리에 실패했습니다."
+        );
+
+      }
 
     });
 
@@ -451,16 +490,17 @@ async function checkClosed() {
 
       const productData = {};
 
+
       let totalPeople = 0;
 
       let totalQuantity = 0;
 
 
       snapshot.forEach(
-        (doc) => {
+        (docSnapshot) => {
 
           const data =
-            doc.data();
+            docSnapshot.data();
 
 
           const product =
@@ -598,6 +638,7 @@ async function checkClosed() {
         }
       );
 
+
     } catch (e) {
 
       console.error(e);
@@ -646,10 +687,6 @@ async function checkClosed() {
 
   }
 
-</script>
-
-</body>
-</html>
 </script>
 
 </body>
