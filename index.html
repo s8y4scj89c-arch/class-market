@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>우리 반 공동구매</title>
 
     <style>
@@ -89,7 +90,7 @@
         }
 
         .status.closed {
-            background: #f1f1f1;
+            background: #eee;
             color: #777;
         }
 
@@ -114,11 +115,11 @@
             font-size: 14px;
             font-weight: bold;
             margin-top: 12px;
+            cursor: pointer;
         }
 
         .button:disabled {
-            background: #d5d5d5;
-            color: #888;
+            background: #ccc;
             cursor: not-allowed;
         }
 
@@ -149,6 +150,24 @@
             text-align: center;
             font-size: 13px;
         }
+
+        .empty {
+            background: white;
+            padding: 25px;
+            border-radius: 18px;
+            text-align: center;
+            color: #777;
+        }
+
+        .closed-message {
+            background: #eee;
+            color: #666;
+            border-radius: 14px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
     </style>
 </head>
 
@@ -159,80 +178,42 @@
     <p>필요한 물건을 함께 구매해요!</p>
 </header>
 
+
 <main class="container">
 
     <section class="welcome">
         <p>WELCOME 👋</p>
-        <h2>우리 반에서 필요한 물건,<br>함께 구매해요.</h2>
+
+        <h2>
+            우리 반에서 필요한 물건,<br>
+            함께 구매해요.
+        </h2>
     </section>
 
-    <h2 class="section-title">🛒 진행 중인 공동구매</h2>
 
-
-    <!-- C타입 충전기 -->
-
-    <div class="card">
-
-        <span class="emoji">🔌</span>
-
-        <span class="status">
-            모집중
-        </span>
-
-        <h3>C타입 충전기</h3>
-
-        <p>
-            현재 신청 인원:
-            <span id="chargerCount">0</span>명
-        </p>
-
-        <button
-            class="button"
-            onclick="openForm('C타입 충전기')"
-        >
-            신청하기 →
-        </button>
-
+    <div id="closedMessage"
+         class="closed-message"
+         style="display:none;">
+        🚫 공동구매가 마감되었습니다.
     </div>
 
 
-    <!-- 형광펜 세트 -->
+    <h2 class="section-title">
+        🛒 진행 중인 공동구매
+    </h2>
 
-    <div class="card">
 
-        <span class="emoji">🖊️</span>
-
-        <span class="status">
-            모집중
-        </span>
-
-        <h3>형광펜 세트</h3>
-
-        <p>
-            현재 신청 인원:
-            <span id="penCount">0</span>명
-        </p>
-
-        <button
-            class="button"
-            onclick="openForm('형광펜 세트')"
-        >
-            신청하기 →
-        </button>
-
+    <div id="productList">
+        불러오는 중...
     </div>
 
 
-    <!-- 신청 폼 -->
-
-    <div
-        class="form"
-        id="applicationForm"
-    >
+    <div class="form" id="applicationForm">
 
         <h3 id="selectedProduct">
             공동구매 신청
         </h3>
+
 
         <label>
             이름
@@ -243,6 +224,7 @@
             type="text"
             placeholder="이름을 입력해주세요"
         >
+
 
         <label>
             수량
@@ -255,12 +237,15 @@
             value="1"
         >
 
+
         <button
             class="button"
+            id="submitButton"
             onclick="submitApplication()"
         >
             공동구매 신청
         </button>
+
 
         <div
             class="message"
@@ -284,17 +269,17 @@
     import {
         getFirestore,
         collection,
+        getDocs,
         addDoc,
         serverTimestamp,
         doc,
         getDoc,
-        getDocs
+        query,
+        where
     }
     from
         "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-
-    // Firebase 설정
 
     const firebaseConfig = {
 
@@ -315,41 +300,211 @@
 
         appId:
             "G-B89J11PS8J"
-
     };
 
 
-    // Firebase 시작
-
     const app =
         initializeApp(firebaseConfig);
+
 
     const db =
         getFirestore(app);
 
 
-    // 현재 선택한 상품
-
     let selectedProduct = "";
-
-
-    // 공동구매 마감 여부
 
     let isClosed = false;
 
 
-    // 페이지가 열리면 마감 상태 확인
+    /*
+     * 상품 불러오기
+     */
 
-    checkClosed();
+    async function loadProducts() {
 
-    // 신청 인원도 불러오기
+        const productList =
+            document.getElementById(
+                "productList"
+            );
 
-    loadCounts();
+
+        try {
+
+            const snapshot =
+                await getDocs(
+                    collection(
+                        db,
+                        "products"
+                    )
+                );
 
 
-    // =========================
-    // 마감 상태 확인
-    // =========================
+            productList.innerHTML = "";
+
+
+            if (snapshot.empty) {
+
+                productList.innerHTML = `
+                    <div class="empty">
+                        아직 등록된 공동구매가 없어요.
+                    </div>
+                `;
+
+                return;
+            }
+
+
+            for (
+                const productDoc
+                of snapshot.docs
+            ) {
+
+                const data =
+                    productDoc.data();
+
+
+                const productName =
+                    data.name || "상품";
+
+
+                const emoji =
+                    data.emoji || "📦";
+
+
+                const count =
+                    await getApplicationCount(
+                        productName
+                    );
+
+
+                const card =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                card.className =
+                    "card";
+
+
+                card.innerHTML = `
+
+                    <span class="emoji">
+                        ${escapeHtml(emoji)}
+                    </span>
+
+                    <span class="status">
+                        ${isClosed ? "마감" : "모집중"}
+                    </span>
+
+                    <h3>
+                        ${escapeHtml(productName)}
+                    </h3>
+
+                    <p>
+                        현재 신청 인원:
+                        ${count}명
+                    </p>
+
+                    <button
+                        class="button"
+                        ${isClosed ? "disabled" : ""}
+                    >
+                        ${isClosed
+                            ? "마감되었습니다"
+                            : "신청하기 →"}
+                    </button>
+
+                `;
+
+
+                const button =
+                    card.querySelector(
+                        ".button"
+                    );
+
+
+                if (!isClosed) {
+
+                    button.addEventListener(
+                        "click",
+                        () => {
+
+                            openForm(
+                                productName
+                            );
+
+                        }
+                    );
+
+                }
+
+
+                productList.appendChild(
+                    card
+                );
+
+            }
+
+        } catch (error) {
+
+            console.error(error);
+
+            productList.innerHTML = `
+                <div class="empty">
+                    상품을 불러오지 못했어요.
+                </div>
+            `;
+
+        }
+
+    }
+
+
+    /*
+     * 상품별 신청 인원
+     */
+
+    async function getApplicationCount(
+        productName
+    ) {
+
+        try {
+
+            const q =
+                query(
+                    collection(
+                        db,
+                        "applications"
+                    ),
+                    where(
+                        "product",
+                        "==",
+                        productName
+                    )
+                );
+
+
+            const snapshot =
+                await getDocs(q);
+
+
+            return snapshot.size;
+
+        } catch (error) {
+
+            console.error(error);
+
+            return 0;
+
+        }
+
+    }
+
+
+    /*
+     * 마감 여부 확인
+     */
 
     async function checkClosed() {
 
@@ -372,83 +527,33 @@
 
                 isClosed = true;
 
-                setClosedUI();
+
+                document
+                    .getElementById(
+                        "closedMessage"
+                    )
+                    .style.display =
+                        "block";
 
             }
 
         } catch (error) {
 
-            console.error(
-                "마감 상태 확인 실패:",
-                error
-            );
+            console.error(error);
 
         }
 
     }
 
 
-    // =========================
-    // 마감 화면으로 변경
-    // =========================
-
-    function setClosedUI() {
-
-        // 모집중 → 마감
-
-        document
-            .querySelectorAll(".status")
-            .forEach(function(element) {
-
-                element.textContent =
-                    "마감";
-
-                element.classList.add(
-                    "closed"
-                );
-
-            });
-
-
-        // 신청 버튼 비활성화
-
-        document
-            .querySelectorAll(".card .button")
-            .forEach(function(button) {
-
-                button.disabled = true;
-
-                button.textContent =
-                    "마감됨";
-
-            });
-
-
-        // 신청 폼 닫기
-
-        document
-            .getElementById(
-                "applicationForm"
-            )
-            .style.display = "none";
-
-    }
-
-
-    // =========================
-    // 신청 폼 열기
-    // =========================
+    /*
+     * 신청 폼 열기
+     */
 
     window.openForm =
         function(product) {
 
-            // 마감됐으면 신청 불가능
-
             if (isClosed) {
-
-                alert(
-                    "공동구매가 마감되었습니다."
-                );
 
                 return;
 
@@ -486,29 +591,12 @@
         };
 
 
-    // =========================
-    // 신청하기
-    // =========================
+    /*
+     * 신청하기
+     */
 
     window.submitApplication =
         async function() {
-
-
-            // 혹시 마감된 상태라면 차단
-
-            if (isClosed) {
-
-                document
-                    .getElementById(
-                        "message"
-                    )
-                    .textContent =
-                        "🚫 공동구매가 마감되었습니다.";
-
-                return;
-
-            }
-
 
             const name =
                 document
@@ -520,18 +608,34 @@
             const quantity =
                 Number(
                     document
-                        .getElementById(
-                            "quantity"
-                        )
+                        .getElementById("quantity")
                         .value
                 );
 
 
             const message =
                 document
-                    .getElementById(
-                        "message"
-                    );
+                    .getElementById("message");
+
+
+            if (isClosed) {
+
+                message.textContent =
+                    "🚫 공동구매가 마감되었습니다.";
+
+                return;
+
+            }
+
+
+            if (!selectedProduct) {
+
+                message.textContent =
+                    "상품을 먼저 선택해주세요.";
+
+                return;
+
+            }
 
 
             if (!name) {
@@ -556,15 +660,43 @@
 
             try {
 
-                await addDoc(
+                /*
+                 * 신청 직전에 다시 마감 여부 확인
+                 */
 
+                const statusDoc =
+                    await getDoc(
+                        doc(
+                            db,
+                            "settings",
+                            "status"
+                        )
+                    );
+
+
+                if (
+                    statusDoc.exists() &&
+                    statusDoc.data().closed === true
+                ) {
+
+                    isClosed = true;
+
+                    message.textContent =
+                        "🚫 공동구매가 마감되었습니다.";
+
+                    await loadProducts();
+
+                    return;
+
+                }
+
+
+                await addDoc(
                     collection(
                         db,
                         "applications"
                     ),
-
                     {
-
                         product:
                             selectedProduct,
 
@@ -576,9 +708,7 @@
 
                         createdAt:
                             serverTimestamp()
-
                     }
-
                 );
 
 
@@ -587,30 +717,21 @@
 
 
                 document
-                    .getElementById(
-                        "name"
-                    )
+                    .getElementById("name")
                     .value = "";
 
 
                 document
-                    .getElementById(
-                        "quantity"
-                    )
+                    .getElementById("quantity")
                     .value = 1;
 
 
-                // 신청 인원 다시 불러오기
-
-                loadCounts();
+                await loadProducts();
 
 
             } catch (error) {
 
-                console.error(
-                    error
-                );
-
+                console.error(error);
 
                 message.textContent =
                     "신청에 실패했습니다. 잠시 후 다시 시도해주세요.";
@@ -620,84 +741,49 @@
         };
 
 
-    // =========================
-    // 상품별 신청 인원
-    // =========================
+    /*
+     * HTML 안전 처리
+     */
 
-    async function loadCounts() {
+    function escapeHtml(value) {
 
-        try {
+        return String(value)
 
-            const snapshot =
-                await getDocs(
-                    collection(
-                        db,
-                        "applications"
-                    )
-                );
+            .replaceAll(
+                "&",
+                "&amp;"
+            )
 
+            .replaceAll(
+                "<",
+                "&lt;"
+            )
 
-            let chargerCount = 0;
+            .replaceAll(
+                ">",
+                "&gt;"
+            )
 
-            let penCount = 0;
+            .replaceAll(
+                '"',
+                "&quot;"
+            )
 
-
-            snapshot.forEach(
-                function(docSnapshot) {
-
-                    const data =
-                        docSnapshot.data();
-
-
-                    if (
-                        data.product ===
-                        "C타입 충전기"
-                    ) {
-
-                        chargerCount++;
-
-                    }
-
-
-                    if (
-                        data.product ===
-                        "형광펜 세트"
-                    ) {
-
-                        penCount++;
-
-                    }
-
-                }
+            .replaceAll(
+                "'",
+                "&#039;"
             );
-
-
-            document
-                .getElementById(
-                    "chargerCount"
-                )
-                .textContent =
-                    chargerCount;
-
-
-            document
-                .getElementById(
-                    "penCount"
-                )
-                .textContent =
-                    penCount;
-
-
-        } catch (error) {
-
-            console.error(
-                "신청 인원 불러오기 실패:",
-                error
-            );
-
-        }
 
     }
+
+
+    /*
+     * 시작
+     */
+
+    await checkClosed();
+
+    await loadProducts();
 
 </script>
 
