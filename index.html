@@ -88,6 +88,11 @@
             font-weight: bold;
         }
 
+        .status.closed {
+            background: #f1f1f1;
+            color: #777;
+        }
+
         .card h3 {
             margin: 13px 0 6px;
             font-size: 17px;
@@ -109,6 +114,12 @@
             font-size: 14px;
             font-weight: bold;
             margin-top: 12px;
+        }
+
+        .button:disabled {
+            background: #d5d5d5;
+            color: #888;
+            cursor: not-allowed;
         }
 
         .form {
@@ -157,159 +168,536 @@
 
     <h2 class="section-title">🛒 진행 중인 공동구매</h2>
 
+
+    <!-- C타입 충전기 -->
+
     <div class="card">
+
         <span class="emoji">🔌</span>
-        <span class="status">모집중</span>
+
+        <span class="status">
+            모집중
+        </span>
 
         <h3>C타입 충전기</h3>
-        <p>현재 신청 인원: <span id="chargerCount">0</span>명</p>
 
-        <button class="button"
-                onclick="openForm('C타입 충전기')">
+        <p>
+            현재 신청 인원:
+            <span id="chargerCount">0</span>명
+        </p>
+
+        <button
+            class="button"
+            onclick="openForm('C타입 충전기')"
+        >
             신청하기 →
         </button>
+
     </div>
+
+
+    <!-- 형광펜 세트 -->
 
     <div class="card">
+
         <span class="emoji">🖊️</span>
-        <span class="status">모집중</span>
+
+        <span class="status">
+            모집중
+        </span>
 
         <h3>형광펜 세트</h3>
-        <p>현재 신청 인원: <span id="penCount">0</span>명</p>
 
-        <button class="button"
-                onclick="openForm('형광펜 세트')">
+        <p>
+            현재 신청 인원:
+            <span id="penCount">0</span>명
+        </p>
+
+        <button
+            class="button"
+            onclick="openForm('형광펜 세트')"
+        >
             신청하기 →
         </button>
+
     </div>
 
-    <div class="form" id="applicationForm">
 
-        <h3 id="selectedProduct">공동구매 신청</h3>
+    <!-- 신청 폼 -->
 
-        <label>이름</label>
-        <input id="name" type="text" placeholder="이름을 입력해주세요">
+    <div
+        class="form"
+        id="applicationForm"
+    >
 
-        <label>수량</label>
-        <input id="quantity" type="number" min="1" value="1">
+        <h3 id="selectedProduct">
+            공동구매 신청
+        </h3>
 
-        <button class="button" onclick="submitApplication()">
+        <label>
+            이름
+        </label>
+
+        <input
+            id="name"
+            type="text"
+            placeholder="이름을 입력해주세요"
+        >
+
+        <label>
+            수량
+        </label>
+
+        <input
+            id="quantity"
+            type="number"
+            min="1"
+            value="1"
+        >
+
+        <button
+            class="button"
+            onclick="submitApplication()"
+        >
             공동구매 신청
         </button>
 
-        <div class="message" id="message"></div>
+        <div
+            class="message"
+            id="message"
+        ></div>
 
     </div>
 
 </main>
 
+
 <script type="module">
 
-    /*
-     * 🔥 여기에 Firebase에서 복사한
-     * firebaseConfig 내용을 넣어주세요.
-     *
-     * apiKey 등의 값을 이 채팅에 보내지는 마세요.
-     */
+    import {
+        initializeApp
+    }
+    from
+        "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 
-    import { initializeApp }
-        from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 
     import {
         getFirestore,
         collection,
         addDoc,
-        serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+        serverTimestamp,
+        doc,
+        getDoc,
+        getDocs
+    }
+    from
+        "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
+
+    // Firebase 설정
 
     const firebaseConfig = {
-        // Firebase 콘솔에서 받은 값을 넣으세요.
-        apiKey: "AIzaSyDCyA-OWIIWP8rp0N2rP7bVlVZepjq1jBk",
-        authDomain: "classmarket-d9c78.firebaseapp.com",
-        projectId: "classmarket-d9c78",
-        storageBucket: "classmarket-d9c78.firebasestorage.app",
-        messagingSenderId: "448581710198",
-        appId: "G-B89J11PS8J"
+
+        apiKey:
+            "AIzaSyDCyA-OWIIWP8rp0N2rP7bVlVZepjq1jBk",
+
+        authDomain:
+            "classmarket-d9c78.firebaseapp.com",
+
+        projectId:
+            "classmarket-d9c78",
+
+        storageBucket:
+            "classmarket-d9c78.firebasestorage.app",
+
+        messagingSenderId:
+            "448581710198",
+
+        appId:
+            "G-B89J11PS8J"
+
     };
 
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    // Firebase 시작
 
+    const app =
+        initializeApp(firebaseConfig);
+
+    const db =
+        getFirestore(app);
+
+
+    // 현재 선택한 상품
 
     let selectedProduct = "";
 
 
-    window.openForm = function(product) {
+    // 공동구매 마감 여부
 
-        selectedProduct = product;
-
-        document.getElementById("selectedProduct")
-            .textContent = product + " 신청";
-
-        document.getElementById("applicationForm")
-            .style.display = "block";
-
-        document.getElementById("applicationForm")
-            .scrollIntoView({
-                behavior: "smooth"
-            });
-    };
+    let isClosed = false;
 
 
-    window.submitApplication = async function() {
+    // 페이지가 열리면 마감 상태 확인
 
-        const name =
-            document.getElementById("name").value.trim();
+    checkClosed();
 
-        const quantity =
-            Number(document.getElementById("quantity").value);
+    // 신청 인원도 불러오기
 
-        const message =
-            document.getElementById("message");
+    loadCounts();
 
 
-        if (!name) {
-            message.textContent =
-                "이름을 입력해주세요.";
-            return;
-        }
+    // =========================
+    // 마감 상태 확인
+    // =========================
 
-        if (!quantity || quantity < 1) {
-            message.textContent =
-                "수량을 확인해주세요.";
-            return;
-        }
-
+    async function checkClosed() {
 
         try {
 
-            await addDoc(
-                collection(db, "applications"),
-                {
-                    product: selectedProduct,
-                    name: name,
-                    quantity: quantity,
-                    createdAt: serverTimestamp()
+            const statusDoc =
+                await getDoc(
+                    doc(
+                        db,
+                        "settings",
+                        "status"
+                    )
+                );
+
+
+            if (
+                statusDoc.exists() &&
+                statusDoc.data().closed === true
+            ) {
+
+                isClosed = true;
+
+                setClosedUI();
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "마감 상태 확인 실패:",
+                error
+            );
+
+        }
+
+    }
+
+
+    // =========================
+    // 마감 화면으로 변경
+    // =========================
+
+    function setClosedUI() {
+
+        // 모집중 → 마감
+
+        document
+            .querySelectorAll(".status")
+            .forEach(function(element) {
+
+                element.textContent =
+                    "마감";
+
+                element.classList.add(
+                    "closed"
+                );
+
+            });
+
+
+        // 신청 버튼 비활성화
+
+        document
+            .querySelectorAll(".card .button")
+            .forEach(function(button) {
+
+                button.disabled = true;
+
+                button.textContent =
+                    "마감됨";
+
+            });
+
+
+        // 신청 폼 닫기
+
+        document
+            .getElementById(
+                "applicationForm"
+            )
+            .style.display = "none";
+
+    }
+
+
+    // =========================
+    // 신청 폼 열기
+    // =========================
+
+    window.openForm =
+        function(product) {
+
+            // 마감됐으면 신청 불가능
+
+            if (isClosed) {
+
+                alert(
+                    "공동구매가 마감되었습니다."
+                );
+
+                return;
+
+            }
+
+
+            selectedProduct =
+                product;
+
+
+            document
+                .getElementById(
+                    "selectedProduct"
+                )
+                .textContent =
+                    product + " 신청";
+
+
+            document
+                .getElementById(
+                    "applicationForm"
+                )
+                .style.display =
+                    "block";
+
+
+            document
+                .getElementById(
+                    "applicationForm"
+                )
+                .scrollIntoView({
+                    behavior: "smooth"
+                });
+
+        };
+
+
+    // =========================
+    // 신청하기
+    // =========================
+
+    window.submitApplication =
+        async function() {
+
+
+            // 혹시 마감된 상태라면 차단
+
+            if (isClosed) {
+
+                document
+                    .getElementById(
+                        "message"
+                    )
+                    .textContent =
+                        "🚫 공동구매가 마감되었습니다.";
+
+                return;
+
+            }
+
+
+            const name =
+                document
+                    .getElementById("name")
+                    .value
+                    .trim();
+
+
+            const quantity =
+                Number(
+                    document
+                        .getElementById(
+                            "quantity"
+                        )
+                        .value
+                );
+
+
+            const message =
+                document
+                    .getElementById(
+                        "message"
+                    );
+
+
+            if (!name) {
+
+                message.textContent =
+                    "이름을 입력해주세요.";
+
+                return;
+
+            }
+
+
+            if (!quantity || quantity < 1) {
+
+                message.textContent =
+                    "수량을 확인해주세요.";
+
+                return;
+
+            }
+
+
+            try {
+
+                await addDoc(
+
+                    collection(
+                        db,
+                        "applications"
+                    ),
+
+                    {
+
+                        product:
+                            selectedProduct,
+
+                        name:
+                            name,
+
+                        quantity:
+                            quantity,
+
+                        createdAt:
+                            serverTimestamp()
+
+                    }
+
+                );
+
+
+                message.textContent =
+                    "✅ 신청이 완료되었습니다!";
+
+
+                document
+                    .getElementById(
+                        "name"
+                    )
+                    .value = "";
+
+
+                document
+                    .getElementById(
+                        "quantity"
+                    )
+                    .value = 1;
+
+
+                // 신청 인원 다시 불러오기
+
+                loadCounts();
+
+
+            } catch (error) {
+
+                console.error(
+                    error
+                );
+
+
+                message.textContent =
+                    "신청에 실패했습니다. 잠시 후 다시 시도해주세요.";
+
+            }
+
+        };
+
+
+    // =========================
+    // 상품별 신청 인원
+    // =========================
+
+    async function loadCounts() {
+
+        try {
+
+            const snapshot =
+                await getDocs(
+                    collection(
+                        db,
+                        "applications"
+                    )
+                );
+
+
+            let chargerCount = 0;
+
+            let penCount = 0;
+
+
+            snapshot.forEach(
+                function(docSnapshot) {
+
+                    const data =
+                        docSnapshot.data();
+
+
+                    if (
+                        data.product ===
+                        "C타입 충전기"
+                    ) {
+
+                        chargerCount++;
+
+                    }
+
+
+                    if (
+                        data.product ===
+                        "형광펜 세트"
+                    ) {
+
+                        penCount++;
+
+                    }
+
                 }
             );
 
 
-            message.textContent =
-                "✅ 신청이 완료되었습니다!";
+            document
+                .getElementById(
+                    "chargerCount"
+                )
+                .textContent =
+                    chargerCount;
 
-            document.getElementById("name").value = "";
-            document.getElementById("quantity").value = 1;
+
+            document
+                .getElementById(
+                    "penCount"
+                )
+                .textContent =
+                    penCount;
+
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "신청 인원 불러오기 실패:",
+                error
+            );
 
-            message.textContent =
-                "신청에 실패했습니다. 잠시 후 다시 시도해주세요.";
         }
-    };
+
+    }
 
 </script>
 
